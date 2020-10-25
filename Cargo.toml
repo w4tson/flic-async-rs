@@ -1,0 +1,21 @@
+[package]
+name = "flic-client"
+version = "0.0.0"
+edition = "2018"
+
+[dependencies]
+tokio = { version = "0.3.0", features = ["full", "tracing"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.2.7", default-features = false, features = ["fmt", "ansi", "env-filter", "chrono", "tracing-log"] }
+tokio-util = { version = "0.4.0", features = ["full"] }
+bytes = "0.5"
+futures = "0.3.0"
+http = "0.2"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+httparse = "1.0"
+time = "0.1"
+regex = "1.4.1"
+num_enum = "0.5.1"
+
