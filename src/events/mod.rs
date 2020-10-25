@@ -4,6 +4,48 @@ use num_enum::IntoPrimitive;
 use num_enum::TryFromPrimitive;
 
 use super::enums::*;
+use tokio_util::codec::Decoder;
+use bytes::BytesMut;
+use futures::io::Error;
+use crate::events::stream_mapper::{EventResult, ByteToEventMapper};
+
+pub struct EventCodec {
+    event_mapper:  ByteToEventMapper
+}
+
+impl EventCodec {
+    pub fn new() -> EventCodec {
+        EventCodec { event_mapper:ByteToEventMapper::new() }
+    }
+}
+
+impl Decoder for EventCodec {
+    type Item = EventResult;
+    type Error = std::io::Error;
+
+    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+        let mut result : Option<EventResult> = None;
+        for b in src.iter() {
+            match self.event_mapper.map(*b) {
+                EventResult::None => {}
+                EventResult::Some(Event::NoOp) => {}
+                EventResult::Some(event) => {
+                    // eprintln!("event = {:#?}", event); 
+                    
+                    result = Some(EventResult::Some(event));
+                }
+                _ => {
+                }
+            }
+        }
+        
+        if let Some(e) = &result {
+            src.clear();
+        }
+        
+        Ok(result)
+    }
+}
 
 #[repr(u8)]
 #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, IntoPrimitive, TryFromPrimitive)]

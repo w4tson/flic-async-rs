@@ -28,6 +28,10 @@ impl ByteToEventMapper {
             fifo: VecDeque::new(),
         }
     }
+    
+    pub fn drain(&mut self) {
+        self.fifo.drain(..);
+    }
 
     pub fn map(&mut self, value: u8) -> EventResult {
         self.fifo.push_back(value);
@@ -42,7 +46,10 @@ impl ByteToEventMapper {
                 }
                 HasPacketResult::Yes => match self.read_event() {
                     Event::CorruptEvent => EventResult::CorruptPackage,
-                    event => EventResult::Some(event),
+                    event => {
+                        self.fifo.drain(..);
+                        EventResult::Some(event)
+                    },
                 },
             },
             _ => {
