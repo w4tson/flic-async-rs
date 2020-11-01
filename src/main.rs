@@ -17,74 +17,65 @@
 #![warn(rust_2018_idioms)]
 
 
-
 use std::error::Error;
 use std::net::SocketAddr;
-use flic_client::connection::Connection;
+use std::sync::Arc;
+
+use structopt::StructOpt;
+use tokio::stream::StreamExt;
+use tokio::sync::Mutex;
+
 use flic_client::client::connect;
-use tokio::stream::{StreamExt};
-// use futures::{StreamExt, TryFutureExt};
-use async_stream::stream;
-use async_stream::try_stream;
+use flic_client::lights_controller::LightController;
 
-use futures::stream::Stream;
-use futures::pin_mut;
-use tokio::join;
-
-use std::io;
-use tokio::net::{TcpStream, TcpListener};
-
-
-const BUTTON : &str = "80:e4:da:71:64:d6";
+const OK: &'static str = "\x1b[0;92m[Ok]\x1b[0m";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // Parse what address we're going to connect to
-    let addr = "192.168.1.149:5551";
-    let addr = addr.parse::<SocketAddr>()?;
+    let options = Options::from_args();
 
+    print!("Connecting to Hue bridge...\n");
+    let lights = LightController::new(&options.username).await;
+    lights.list_all();
+    let lights_mutex = Arc::new(Mutex::new(lights));
+    println!("{}", &OK);
+
+    print!("Connecting to Flic Server...");
+    let addr = format!("{}:5551", options.server).parse::<SocketAddr>()?;
     let mut client = connect(addr).await?;
-    
-    println!("**********");
+    client.subscribe(&options.button).await;
+    println!("{}", &OK);
 
-    let incoming = foo().await;
+    while let Some(e) = client.connection.reader.next().await {
+        if let Ok(event) = e {
+            let lights_mutex = Arc::clone(&lights_mutex);
 
-    // let mut listener = TcpListener::bind("127.0.0.1:4567").await.unwrap();
-    // 
-    // let incoming = stream! {
-    //     loop {
-    //         let (socket, _) = listener.accept().await.unwrap();
-    //         yield socket;
-    //     }
-    // };
-
-
-    let f1 = tokio::spawn(async {
-        pin_mut!(incoming);
-        while let Some(v) = incoming.next().await {
-            println!("handle = {:?}", v);
+            tokio::spawn(async move {
+                let lights_mutex = Arc::clone(&lights_mutex);
+                let light_controller = lights_mutex.lock().await;
+                light_controller.process_event_result(event).await;
+            });
         }
-    });
-    
-    let f2 = client.subscribe(BUTTON);
+    }
 
-    join!(f1, f2);
-    
-    println!("done");
+    println!("\x1b[0;92m[Done]\x1b[0m");
     
     Ok(())
 }
 
 
+#[derive(Debug, StructOpt)]
+#[structopt(name = "flicfun", about = "Hacking on the flic button")]
+pub struct Options {
+    #[structopt(short = "s", long = "server", env = "FLIC_SERVER")]
+    /// the hostname of the flicd server
+    pub server: String,
 
-async fn  foo() -> impl Stream<Item = Result<TcpStream, ()>> {
-    let mut listener = TcpListener::bind("127.0.0.1:4567").await.unwrap();
+    #[structopt(short = "b", long = "button", env = "FLIC_BUTTON")]
+    /// the mac address of the flic button to connect to 
+    pub button: String,
 
-    let incoming = try_stream! {
-        loop {
-            let (socket, _) = listener.accept().await.unwrap();
-            yield socket;
-        }
-    };
-    incoming
+    #[structopt(short = "u", long = "hue-user", env = "HUE_USERNAME")]
+    /// the hostname of the hue bridge
+    pub username: String,
 }

@@ -6,7 +6,6 @@ use num_enum::TryFromPrimitive;
 use super::enums::*;
 use tokio_util::codec::Decoder;
 use bytes::BytesMut;
-use futures::io::Error;
 use crate::events::stream_mapper::{EventResult, ByteToEventMapper};
 
 pub struct EventCodec {
@@ -39,7 +38,7 @@ impl Decoder for EventCodec {
             }
         }
         
-        if let Some(e) = &result {
+        if let Some(_e) = &result {
             src.clear();
         }
         

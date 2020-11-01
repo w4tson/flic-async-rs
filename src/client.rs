@@ -1,15 +1,15 @@
-use tokio::net::{ToSocketAddrs, TcpStream};
-use crate::commands::Command;
-use crate::enums::LatencyMode;
-use crate::connection::Connection;
+
 use futures::SinkExt;
-use tokio::stream::{StreamExt, Stream};
+use tokio::net::{TcpStream, ToSocketAddrs};
 use tokio::sync::mpsc;
+use tokio::sync::mpsc::{Receiver, Sender};
+
+use crate::commands::Command;
+use crate::connection::Connection;
+use crate::enums::LatencyMode;
 use crate::events::stream_mapper::EventResult;
-use tokio::sync::mpsc::{Sender, Receiver};
-use async_stream::stream;
 
-
+#[allow(dead_code)]
 pub struct Client {
     /// The TCP connection decorated with the redis protocol encoder / decoder
     /// implemented using a buffered `TcpStream`.
@@ -18,7 +18,7 @@ pub struct Client {
     /// passed to `Connection::new`, which initializes the associated buffers.
     /// `Connection` allows the handler to operate at the "frame" level and keep
     /// the byte level protocol parsing details encapsulated in `Connection`.
-    connection: Connection,
+    pub connection: Connection,
     tx: Sender<EventResult>,
     pub rx: Receiver<EventResult>
 }
@@ -41,7 +41,6 @@ pub async fn connect<T: ToSocketAddrs>(addr: T) -> Result<Client, std::io::Error
     Ok(Client { connection, tx, rx })
 }
 
-// impl tokio::stream::Stream<Item = Result<EventResult, std::io::Error>> 
 
 impl Client {
     pub async fn subscribe(&mut self, button: &str) {
@@ -53,21 +52,8 @@ impl Client {
             auto_disconnect_time: 11111_i16,
         };
 
-        self.connection.writer.send(create_conn_cmd).await;
-
-        while let Some(e) = self.connection.reader.next().await {
-            if let Ok(event) = e {
-                println!("got {:?}", event);
-                self.tx.send(event.clone());
-            }
-        }
-
-        
-        
-        // // Update the set of subscribed channels.
-        // self.subscribed_channels
-        //     .extend(channels.iter().map(Clone::clone));
-        
+        self.connection.writer.send(create_conn_cmd).await.expect("Couldn't connect to flic");
+           
     }
 }
 
