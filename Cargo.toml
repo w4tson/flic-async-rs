@@ -18,4 +18,6 @@ httparse = "1.0"
 time = "0.1"
 regex = "1.4.1"
 num_enum = "0.5.1"
+async-stream = "0.3.0"
+
 
