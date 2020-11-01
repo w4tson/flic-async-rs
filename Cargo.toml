@@ -14,5 +14,6 @@ async-stream = "0.3.0"
 structopt = "0.3.20"
 hueclient = "0.3.10"
 anyhow = "1.0.33"
+rand = "0.7.3"
 
 

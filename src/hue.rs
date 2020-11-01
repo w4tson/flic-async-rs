@@ -1,5 +1,5 @@
 use tokio::task;
-use hueclient::bridge::Bridge;
+use hueclient::bridge::{Bridge, Light, CommandLight};
 use anyhow::Result;
 
 
@@ -19,9 +19,8 @@ impl HueApi {
     }
 
     pub fn toggle_light(&self, id: usize) -> Result<bool> {
-        let lights = self.bridge.get_all_lights().expect("failed to get the lights");
-        let light = lights.iter().find(|&light| light.id == id).expect(&format!("No light with id {}", id));
-        let result = if light.light.state.on {   
+        let light = self.find_light(id);
+        let result = if light.state.on {   
             self.bridge.set_light_state(id, &hueclient::bridge::CommandLight::default().off())?
         } else {
             self.bridge.set_light_state(id, &hueclient::bridge::CommandLight::default().on())?
@@ -30,6 +29,17 @@ impl HueApi {
         eprintln!("result = {:#?}", result);
         
         Ok(true)
+    }
+    
+    pub fn find_light(&self, id: usize) -> Light {
+        let lights = self.bridge.get_all_lights().expect("failed to get the lights");
+        lights.iter().find(|&light| light.id == id).expect(&format!("No light with id {}", id)).light.clone()
+    }
+    
+    pub fn set_color(&self, id: usize, x: f32, y: f32) {
+        let mut  cmd = CommandLight::default().with_xy(x, y);
+        cmd.transitiontime = Some(10);
+        self.bridge.set_light_state(id, &cmd);
     }
 
     
