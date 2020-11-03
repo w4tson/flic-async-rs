@@ -25,8 +25,8 @@ use structopt::StructOpt;
 use tokio::stream::StreamExt;
 use tokio::sync::Mutex;
 
-use flic_client::client::connect;
-use flic_client::lights_controller::LightController;
+use flic_async_rs::client::connect;
+use flic_async_rs::lights_controller::LightController;
 
 const OK: &'static str = "\x1b[0;92m[Ok]\x1b[0m";
 
@@ -47,7 +47,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("{}", &OK);
 
     let splash = include_str!("splash.txt");
-    println!("{}",splash);
+    
+    let splash = format!("\x1b[0;92m{}", splash)
+        .replace("#TITLE#", "\x1b[31;1mFlicFun\x1b[0;92m")
+        .replace("#SUBTITLE#", "\x1b[34;1mRust + \x1b[36;1mFlic + \x1b[35;1mHue\x1b[0;92m");
+    println!("{}\x1b[0m",splash);
+    
 
     while let Some(e) = client.connection.reader.next().await {
         if let Ok(event) = e {
