@@ -46,6 +46,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     client.subscribe(&options.button).await;
     println!("{}", &OK);
 
+    let splash = include_str!("splash.txt");
+    println!("{}",splash);
+
     while let Some(e) = client.connection.reader.next().await {
         if let Ok(event) = e {
             let lights_mutex = Arc::clone(&lights_mutex);

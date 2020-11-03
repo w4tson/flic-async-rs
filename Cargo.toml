@@ -1,6 +1,6 @@
 [package]
-name = "flic-client"
-version = "0.0.0"
+name = "flicfun"
+version = "0.1.0"
 edition = "2018"
 
 [dependencies]
