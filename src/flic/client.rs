@@ -4,10 +4,10 @@ use tokio::net::{TcpStream, ToSocketAddrs};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
-use crate::commands::Command;
-use crate::connection::Connection;
-use crate::enums::LatencyMode;
-use crate::events::stream_mapper::EventResult;
+use super::commands::Command;
+use super::connection::Connection;
+use super::enums::LatencyMode;
+use super::events::stream_mapper::EventResult;
 
 #[allow(dead_code)]
 pub struct Client {

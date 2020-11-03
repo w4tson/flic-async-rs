@@ -6,7 +6,7 @@ use num_enum::TryFromPrimitive;
 use super::enums::*;
 use tokio_util::codec::Decoder;
 use bytes::BytesMut;
-use crate::events::stream_mapper::{EventResult, ByteToEventMapper};
+use super::events::stream_mapper::{EventResult, ByteToEventMapper};
 
 pub struct EventCodec {
     event_mapper:  ByteToEventMapper

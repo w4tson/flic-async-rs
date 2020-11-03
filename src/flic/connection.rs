@@ -1,8 +1,8 @@
 use tokio::net::TcpStream;
 use tokio_util::codec::{FramedWrite, FramedRead};
-use crate::commands::FlicCodec;
+use super::commands::FlicCodec;
 use tokio::net::tcp::{OwnedWriteHalf, OwnedReadHalf};
-use crate::events::EventCodec;
+use super::events::EventCodec;
 
 
 pub struct Connection {

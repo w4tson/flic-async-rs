@@ -1,7 +1,7 @@
 use crate::hue::HueApi;
-use crate::events::stream_mapper::EventResult;
-use crate::events::Event;
-use crate::enums::ClickType;
+use crate::flic::events::stream_mapper::EventResult;
+use crate::flic::events::Event;
+use crate::flic::enums::ClickType;
 use rand::{Rng, thread_rng};
 
 
