@@ -5,8 +5,6 @@ use crate::flic::enums::ClickType;
 use rand::{Rng, thread_rng};
 
 
-
-
 pub struct LightController {
     hue_api: HueApi
 } 
@@ -25,6 +23,36 @@ impl LightController {
     pub fn toggle_kitchen(&self) {
         self.hue_api.toggle_light(6).expect("toggling globe");
     }
+    
+    fn toggle_all(&self) {
+        let lights = self.hue_api.get_all_lights().expect("problem getting the lights");
+        let any_on = lights
+            .iter()
+            .any(|l| l.light.state.on);
+        
+        if any_on {
+            // self.state.remove_all_state();
+            lights.iter()
+                .filter(|&l| l.light.state.on)
+                .for_each(|l| {
+                    // self.state.add_light(l);
+                    self.hue_api.toggle_light(l.id);
+                })
+            //for all lights that are on
+            //save to db
+            //turn off
+        } else {
+            //for all lights in the db
+            //turn on
+            lights.iter()
+                .for_each(|l| {
+                    self.hue_api.toggle_light(l.id);
+                })
+                
+        }
+        
+        
+    }
 
     pub async fn process_event_result(&self, event_result: EventResult) {
         // println!("got this far");
@@ -42,7 +70,7 @@ impl LightController {
 
     async fn on_click(&self, event : Event) {
         eprintln!("clicked = {:#?}", event);
-        self.toggle_kitchen();
+        self.toggle_all();
     }
 
     async fn on_doubbeclick(&self, event : Event) {

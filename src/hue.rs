@@ -1,6 +1,7 @@
 use tokio::task;
-use hueclient::bridge::{Bridge, Light, CommandLight};
+use hueclient::bridge::{Bridge, Light, CommandLight, IdentifiedLight};
 use anyhow::Result;
+use hueclient::HueError;
 
 
 pub struct HueApi {
@@ -41,6 +42,12 @@ impl HueApi {
         cmd.transitiontime = Some(10);
         self.bridge.set_light_state(id, &cmd);
     }
+    
+    pub fn get_all_lights(&self) -> Result<Vec<IdentifiedLight>, HueError>{
+        let result = self.bridge.get_all_lights();
+        result.map(|lights| lights.into_iter()
+            .filter(relevant_light).collect())
+    }
 
     
     pub fn list_lights(&self) {
@@ -69,3 +76,11 @@ impl HueApi {
         }
     }
 } 
+
+// just working with a subset so as not to disturb the household
+fn relevant_light(l: &IdentifiedLight) -> bool {
+    match l.id {
+        1 | 5 | 6 | 12  => true,
+        _ => false
+    }
+}
