@@ -18,6 +18,16 @@ impl HueApi {
         
         HueApi { bridge }
     }
+    
+    pub fn turn_on_light(&self, id: usize) {
+        self.bridge.set_light_state(id, &hueclient::bridge::CommandLight::default().on())
+            .expect(&format!("problem setting light on for id {}", id));
+    }
+
+    pub fn turn_off_light(&self, id: usize) {
+        self.bridge.set_light_state(id, &hueclient::bridge::CommandLight::default().off())
+            .expect(&format!("problem setting light off for id {}", id));
+    }
 
     pub fn toggle_light(&self, id: usize) -> Result<bool> {
         let light = self.find_light(id);
@@ -48,7 +58,6 @@ impl HueApi {
         result.map(|lights| lights.into_iter()
             .filter(relevant_light).collect())
     }
-
     
     pub fn list_lights(&self) {
         match self.bridge.get_all_lights() {
@@ -80,7 +89,7 @@ impl HueApi {
 // just working with a subset so as not to disturb the household
 fn relevant_light(l: &IdentifiedLight) -> bool {
     match l.id {
-        1 | 5 | 6 | 12  => true,
+        6  => true,
         _ => false
     }
 }

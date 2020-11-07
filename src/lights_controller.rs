@@ -3,17 +3,19 @@ use crate::flic::events::stream_mapper::EventResult;
 use crate::flic::events::Event;
 use crate::flic::enums::ClickType;
 use rand::{Rng, thread_rng};
+use crate::state::State;
 
 
 pub struct LightController {
-    hue_api: HueApi
+    hue_api: HueApi,
+    state: State
 } 
 
 impl LightController {
     
     pub async fn new(username: &String) -> LightController {
         let hue_api = HueApi::with_user(username).await;
-        LightController { hue_api }
+        LightController { hue_api, state: State::new() }
     }
     
     pub fn list_all(&self) {
@@ -24,37 +26,31 @@ impl LightController {
         self.hue_api.toggle_light(6).expect("toggling globe");
     }
     
-    fn toggle_all(&self) {
+    fn toggle_all(&mut self) {
         let lights = self.hue_api.get_all_lights().expect("problem getting the lights");
         let any_on = lights
             .iter()
             .any(|l| l.light.state.on);
         
         if any_on {
-            // self.state.remove_all_state();
+            self.state.clear();
             lights.iter()
-                .filter(|&l| l.light.state.on)
                 .for_each(|l| {
-                    // self.state.add_light(l);
-                    self.hue_api.toggle_light(l.id);
-                })
-            //for all lights that are on
-            //save to db
-            //turn off
+                    self.state.save(l);
+                    if l.light.state.on {
+                        self.hue_api.turn_off_light(l.id);
+                    }
+                });
         } else {
-            //for all lights in the db
-            //turn on
-            lights.iter()
+            self.state.lights.iter()
+                .filter(|&l| l.on)
                 .for_each(|l| {
-                    self.hue_api.toggle_light(l.id);
-                })
-                
+                    self.hue_api.turn_on_light(l.id);
+                });
         }
-        
-        
     }
 
-    pub async fn process_event_result(&self, event_result: EventResult) {
+    pub async fn process_event_result(&mut self, event_result: EventResult) {
         // println!("got this far");
         if let EventResult::Some(event) = event_result {
             match event {
@@ -68,7 +64,7 @@ impl LightController {
         }
     }
 
-    async fn on_click(&self, event : Event) {
+    async fn on_click(&mut self, event : Event) {
         eprintln!("clicked = {:#?}", event);
         self.toggle_all();
     }

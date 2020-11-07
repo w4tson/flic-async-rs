@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             tokio::spawn(async move {
                 let lights_mutex = Arc::clone(&lights_mutex);
-                let light_controller = lights_mutex.lock().await;
+                let mut light_controller = lights_mutex.lock().await;
                 light_controller.process_event_result(event).await;
             });
         }
