@@ -2,10 +2,13 @@ use tokio::task;
 use hueclient::bridge::{Bridge, Light, CommandLight, IdentifiedLight};
 use anyhow::Result;
 use hueclient::HueError;
-
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use reqwest;
 
 pub struct HueApi {
-    bridge : Bridge
+    bridge : Bridge,
+    client: reqwest::blocking::Client,
 }
 
 impl HueApi {
@@ -16,7 +19,7 @@ impl HueApi {
             Bridge::discover().unwrap().with_user(username)
         }).await.expect("Couldn't find bridge");
         
-        HueApi { bridge }
+        HueApi { bridge, client: reqwest::blocking::Client::new() }
     }
     
     pub fn turn_on_light(&self, id: usize) {
@@ -84,12 +87,67 @@ impl HueApi {
             }
         }
     }
+
+    //copied and modified from "hueclient"
+    pub fn set_group_state(&self, group: usize, command: &CommandLight) -> Result<Value, HueError> {
+        let url = format!(
+            "http://{}/api/{}/groups/{}/action",
+            self.bridge.ip,
+            self.bridge.username.as_ref().unwrap(),
+            group
+        );
+        let body = ::serde_json::to_vec(command)?;
+        let resp = self
+            .client
+            .put(&url[..])
+            .body(::reqwest::blocking::Body::from(body))
+            .send()?
+            .json()?;
+        
+        self.parse(resp)
+    }
+
+    // copied from "hueclient", this should just be a PR
+    fn parse<T: ::serde::de::DeserializeOwned>(&self, value: Value) -> Result<T, HueError> {
+        use serde_json::*;
+        if !value.is_array() {
+            return Ok(from_value(value)?);
+        }
+        let mut objects: Vec<Value> = from_value(value)?;
+        if objects.len() == 0 {
+            Err(HueError::ProtocolError {
+                msg: "expected non-empty array".to_string(),
+            })?
+        }
+        let value = objects.remove(0);
+        {
+            let object = value.as_object().ok_or(HueError::ProtocolError {
+                msg: "expected first item to be an object".to_string(),
+            })?;
+            if let Some(e) = object.get("error").and_then(|o| o.as_object()) {
+                let code: u64 = e.get("type").and_then(|s| s.as_u64()).unwrap_or(0);
+                let desc = e
+                    .get("description")
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("")
+                    .to_string();
+                Err(HueError::BridgeError {
+                    code: code as usize,
+                    msg: desc,
+                })?
+            }
+        }
+        Ok(from_value(value)?)
+    }
 } 
 
 // just working with a subset so as not to disturb the household
 fn relevant_light(l: &IdentifiedLight) -> bool {
-    match l.id {
-        6  => true,
-        _ => false
-    }
+    // match l.id {
+    //     6 | 1 | 5 | 12  => true,
+    //     _ => false
+    // }
+    
+    //ALL 
+    true
 }

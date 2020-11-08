@@ -70,13 +70,15 @@ impl LightController {
     }
 
     async fn on_doubbeclick(&self, event : Event) {
-        eprintln!("DOUBLE = {:#?}", event);
-        let mut rng = thread_rng();
-        let x: f32 = rng.gen_range(0.0, 0.8);
-        let y: f32 = rng.gen_range(0.0, 0.9);
-        
-        self.hue_api.set_color(6, x, y);
-        
+        let light = hueclient::bridge::CommandLight::default()
+        .on()
+        .with_bri(254)
+        .with_hue(8418)
+        .with_sat(140)
+        .with_xy(0.4573,
+                      0.41);
+
+        self.hue_api.set_group_state(9, &light).expect("nope");        
     }
 
     async fn on_hold(&self, event : Event) {
