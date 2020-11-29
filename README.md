@@ -1,5 +1,7 @@
 # Flicfun 
 
+[![Master](https://github.com/w4tson/flic-async-rs/workflows/Rust/badge.svg)](https://github.com/w4tson/flic-async-rs/actions)
+
 Tinkering with Rust + Raspberry Pi + Flic + Hue
 
 
